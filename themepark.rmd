@@ -1,1 +1,176 @@
+---
+title: "DMTM Project FA22"
+output: html_notebook
+author: "Benjamin Dinal, David Schindker"
+---
 
+```{r}
+library(topicdoc)
+library(topicmodels)
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(ggplot2)
+library(mosaic)
+```
+
+
+```{r}
+DL <- read.csv("DisneylandReviews.csv")
+DLReview <- (select(DL, Review_ID, Rating, Year, Year_Month, Reviewer_Location, Review_Text, Branch))
+```
+
+This dataset consists of over 42000 reviews from TripAdvisor for Disneyland Paris, Hong Kong, and California. The dataset was downloaded via Kaggle.
+
+```{r}
+head(DLReview)
+```
+
+```{r}
+DLReview %>%
+  count(Reviewer_Location, sort=TRUE)
+
+DLReview %>%
+  count(Branch, sort = TRUE)
+
+DLReview %>%
+  count(Rating)
+
+DLReview %>%
+  count(Reviewer_Location)
+
+DLReview %>%
+  count(Review_ID, sort = TRUE)
+```
+
+Most Reviewers are from the United States, having about 14542 reviewers. The United Kingdom and Australia follow, and there is about a 5000 difference in reviewers as you go down.
+
+19400 reviews are for Disneyland CA, 13629 are for Disneyland Paris, and 9607 are for Disneyland HK.
+
+More than half of the entire data set consists of 5 Star reviews. 
+
+There were approximately 20 duplicate reviews; they were deleted using the built in Excel function `remove duplicates`, and also some had to be deleted manually.
+
+```{r}
+DLRCA <- DLReview %>% 
+  filter(Branch == "Disneyland_California") %>% 
+  unnest_tokens(word, Review_Text) %>%
+  anti_join(stop_words)
+
+
+head(DLRCA)
+```
+
+```{r}
+DLRHK <- DLReview %>% 
+  filter(Branch == "Disneyland_HongKong") %>% 
+  unnest_tokens(word, Review_Text) %>%
+  anti_join(stop_words)
+
+
+head(DLRHK)
+```
+
+```{r}
+DLRP <- DLReview %>% 
+  filter(Branch == "Disneyland_Paris") %>% 
+  unnest_tokens(word, Review_Text) %>%
+  anti_join(stop_words)
+
+
+head(DLRP)
+```
+
+
+
+```{r}
+DLRCount <- DLReview %>%
+ unnest_tokens(word, Review_Text) %>% 
+ anti_join(stop_words) %>% 
+ count(Review_ID, word, sort = TRUE) %>% 
+ ungroup() 
+
+head(DLRCount) 
+```
+
+```{r}
+DLRHK_words <- DLRHK %>%
+  inner_join(get_sentiments("nrc")) %>% 
+  group_by(sentiment) %>% 
+  count() %>%
+  distinct() %>% 
+  filter(sentiment %in% 
+           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
+             "surprise", "trust"))
+```
+
+```{r}
+DLRHK_words %>%
+  ggplot() + 
+  geom_bar(
+    aes(x = reorder(sentiment, n),
+        y = n), 
+    stat = "identity") + 
+  labs(title = "Sentiment analysis using nrc",
+       subtitle = "Reviews of Disneyland Hong Kong",
+       x = "", 
+       y = "word-count") + 
+  theme_minimal()
+
+head(DLRHK_words)
+```
+
+
+```{r}
+DLRP_words <- DLRP %>%
+  inner_join(get_sentiments("nrc")) %>% 
+  group_by(sentiment) %>% 
+  count() %>%
+  distinct() %>% 
+  filter(sentiment %in% 
+           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
+             "surprise", "trust"))
+```
+
+```{r}
+DLRP_words %>%
+  ggplot() + 
+  geom_bar(
+    aes(x = reorder(sentiment, n),
+        y = n), 
+    stat = "identity") + 
+  labs(title = "Sentiment analysis using nrc",
+       subtitle = "Reviews of Disneyland Paris",
+       x = "", 
+       y = "word-count") + 
+  theme_minimal()
+
+head(DLRHK_words)
+```
+
+```{r}
+DLRCA_words <- DLRCA %>%
+  inner_join(get_sentiments("nrc")) %>% 
+  group_by(sentiment) %>% 
+  count() %>%
+  distinct() %>% 
+  filter(sentiment %in% 
+           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
+             "surprise", "trust"))
+```
+
+```{r}
+DLRCA_words %>%
+  ggplot() + 
+  geom_bar(
+    aes(x = reorder(sentiment, n),
+        y = n), 
+    stat = "identity") + 
+  labs(title = "Sentiment analysis using nrc",
+       subtitle = "Reviews of Disneyland California",
+       x = "", 
+       y = "word-count") + 
+  theme_minimal()
+
+head(DLRHK_words)
+```
