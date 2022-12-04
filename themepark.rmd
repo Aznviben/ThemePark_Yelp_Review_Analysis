@@ -1,8 +1,10 @@
 ---
 title: "DMTM Project FA22"
 output: html_notebook
-author: "Benjamin Dinal, David Schindker"
+author: "Benjamin Dinal, David Schindler"
 ---
+
+# Library & Data Loading; General Statistics & Summary
 
 ```{r}
 library(topicdoc)
@@ -12,15 +14,18 @@ library(tidytext)
 library(dplyr)
 library(ggplot2)
 library(mosaic)
+library(RColorBrewer)
+library(wordcloud)
+library(reshape2)
 ```
 
 
 ```{r}
 DL <- read.csv("DisneylandReviews.csv")
-DLReview <- (select(DL, Review_ID, Rating, Year, Year_Month, Reviewer_Location, Review_Text, Branch))
+DLReview <- (select(DL, Review_ID, Rating, Year, Year_Month, Reviewer_Continent, Reviewer_Country, Review_Text, Branch))
 ```
 
-This dataset consists of over 42000 reviews from TripAdvisor for Disneyland Paris, Hong Kong, and California. The dataset was downloaded via Kaggle.
+This dataset consists of over 40000 reviews from TripAdvisor for Disneyland Paris, Hong Kong, and California. The dataset was downloaded via Kaggle, and cleaned client-side.
 
 ```{r}
 head(DLReview)
@@ -28,149 +33,173 @@ head(DLReview)
 
 ```{r}
 DLReview %>%
-  count(Reviewer_Location, sort=TRUE)
-
-DLReview %>%
   count(Branch, sort = TRUE)
 
 DLReview %>%
   count(Rating)
 
 DLReview %>%
-  count(Reviewer_Location)
+  count(Review_ID, sort = TRUE)
 
 DLReview %>%
-  count(Review_ID, sort = TRUE)
+  count(Reviewer_Continent)
 ```
 
-Most Reviewers are from the United States, having about 14542 reviewers. The United Kingdom and Australia follow, and there is about a 5000 difference in reviewers as you go down.
+Most Reviewers are from North America, having 15826 reviews. Europe has 11731, and Asia has 6708.
 
-19400 reviews are for Disneyland CA, 13629 are for Disneyland Paris, and 9607 are for Disneyland HK.
+18200 reviews are for Disneyland CA, 12693 are for Disneyland Paris, and 9138 are for Disneyland HK.
 
-More than half of the entire data set consists of 5 Star reviews. 
+More than half of the entire data set consists of 5 Star reviews.
 
-There were approximately 20 duplicate reviews; they were deleted using the built in Excel function `remove duplicates`, and also some had to be deleted manually.
+# Data Manipulation
+
+We are going to partition the data into 3 regions: North America and South America will combine, Europe and Africa will combine, and Oceania and Asia will combine. 
 
 ```{r}
-DLRCA <- DLReview %>% 
-  filter(Branch == "Disneyland_California") %>% 
+DLR_Amer <- DLReview %>% 
+  filter((Reviewer_Continent == "North America")|(Reviewer_Continent=="South America")) %>% 
   unnest_tokens(word, Review_Text) %>%
   anti_join(stop_words)
 
 
-head(DLRCA)
+head(DLR_Amer)
 ```
 
 ```{r}
-DLRHK <- DLReview %>% 
-  filter(Branch == "Disneyland_HongKong") %>% 
+DLR_AfEu <- DLReview %>% 
+  filter((Reviewer_Continent == "Africa")|(Reviewer_Continent=="Europe")) %>% 
   unnest_tokens(word, Review_Text) %>%
   anti_join(stop_words)
 
 
-head(DLRHK)
+head(DLR_AfEu)
 ```
 
 ```{r}
-DLRP <- DLReview %>% 
-  filter(Branch == "Disneyland_Paris") %>% 
+DLR_AsOc <- DLReview %>% 
+  filter((Reviewer_Continent == "Asia")|(Reviewer_Continent=="Oceania")) %>% 
   unnest_tokens(word, Review_Text) %>%
   anti_join(stop_words)
 
 
-head(DLRP)
+head(DLR_AsOc)
 ```
 
+# Sentiment Analysis on All Three Disneyland Parks Partitioned by Region
+## Region - The Americas
 
-
-```{r}
-DLRCount <- DLReview %>%
- unnest_tokens(word, Review_Text) %>% 
- anti_join(stop_words) %>% 
- count(Review_ID, word, sort = TRUE) %>% 
- ungroup() 
-
-head(DLRCount) 
-```
+Now we will perform Sentiment Analysis using the "Bing" lexicon on each region's reviews. First, this will be a Sentiment Analysis of all three Disneyland Parks combined (HK, CA, PR)
 
 ```{r}
-DLRHK_words <- DLRHK %>%
-  inner_join(get_sentiments("nrc")) %>% 
-  group_by(sentiment) %>% 
-  count() %>%
-  distinct() %>% 
-  filter(sentiment %in% 
-           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
-             "surprise", "trust"))
-```
-
-```{r}
-DLRHK_words %>%
+DLR_Amer %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Review_ID, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
   ggplot() + 
-  geom_bar(
-    aes(x = reorder(sentiment, n),
-        y = n), 
-    stat = "identity") + 
-  labs(title = "Sentiment analysis using nrc",
-       subtitle = "Reviews of Disneyland Hong Kong",
-       x = "", 
-       y = "word-count") + 
-  theme_minimal()
-
-head(DLRHK_words)
+  geom_bar(aes(x = reorder(Review_ID, sentiment),
+               y = sentiment), 
+           stat = "identity") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       subtitle = "Sorted by Reviewer ID")
 ```
 
+While difficult to read, this Sentiment Analysis shows that an overwhelming majority of Reviewers had positive things to say. This is beneficial because it aligns with the Stars Ratings - more than half of the data-set is 5 star reviews, and more than half of this sample contains a positive sentiment.
 
 ```{r}
-DLRP_words <- DLRP %>%
-  inner_join(get_sentiments("nrc")) %>% 
-  group_by(sentiment) %>% 
-  count() %>%
-  distinct() %>% 
-  filter(sentiment %in% 
-           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
-             "surprise", "trust"))
-```
-
-```{r}
-DLRP_words %>%
+DLR_Amer %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Year, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
   ggplot() + 
-  geom_bar(
-    aes(x = reorder(sentiment, n),
-        y = n), 
-    stat = "identity") + 
-  labs(title = "Sentiment analysis using nrc",
-       subtitle = "Reviews of Disneyland Paris",
-       x = "", 
-       y = "word-count") + 
-  theme_minimal()
+  geom_bar(aes(x = reorder(Year, sentiment),
+               y = sentiment), 
+           stat = "identity") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       subtitle = "Sorted by Year")
 
-head(DLRHK_words)
 ```
 
-```{r}
-DLRCA_words <- DLRCA %>%
-  inner_join(get_sentiments("nrc")) %>% 
-  group_by(sentiment) %>% 
-  count() %>%
-  distinct() %>% 
-  filter(sentiment %in% 
-           c("negative", "positive", "anger", "anticipation", "disgust", "fear", "sadness", "joy",
-             "surprise", "trust"))
-```
+In this sentiment analysis, we see that 2015 had an overwhelmingly high sentiment score. This can be attributed to the fact that, for the America's, Disneyland California celebrated it's 60th Year Anniversary. However, if we were to exclude Disneyland California, 2017's sentiment score is the highest.
+
+
+## Region: Euorpe and Africa
 
 ```{r}
-DLRCA_words %>%
+DLR_AfEu %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Review_ID, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
   ggplot() + 
-  geom_bar(
-    aes(x = reorder(sentiment, n),
-        y = n), 
-    stat = "identity") + 
-  labs(title = "Sentiment analysis using nrc",
-       subtitle = "Reviews of Disneyland California",
-       x = "", 
-       y = "word-count") + 
-  theme_minimal()
+  geom_bar(aes(x = reorder(Review_ID, sentiment),
+               y = sentiment), 
+           stat = "identity") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Eurafrica using Bing Lexicon",
+       subtitle = "Sorted by Reviewer ID")
+```
 
-head(DLRHK_words)
+
+
+```{r}
+DLR_AfEu %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Year, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot() + 
+  geom_bar(aes(x = reorder(Year, sentiment),
+               y = sentiment), 
+           stat = "identity") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       subtitle = "Sorted by Year")
+
+```
+
+
+
+## Region: Asia and Oceania
+
+```{r}
+DLR_AsOc %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Review_ID, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot() + 
+  geom_bar(aes(x = reorder(Review_ID, sentiment),
+               y = sentiment), 
+           stat = "identity") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       subtitle = "Sorted by Reviewer ID")
+```
+
+
+
+```{r}
+DLR_AsOc %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Year, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot() + 
+  geom_bar(aes(x = reorder(Year, sentiment),
+               y = sentiment), 
+           stat = "identity", fill="#393E8F", color="#F3CC64") + 
+  coord_flip() + 
+  labs(x = "", 
+       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       subtitle = "Sorted by Year")
+
 ```
