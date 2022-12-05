@@ -127,6 +127,26 @@ DLR_Amer %>%
 
 In this sentiment analysis, we see that 2015 had an overwhelmingly high sentiment score. This can be attributed to the fact that, for the America's, Disneyland California celebrated it's 60th Year Anniversary. However, if we were to exclude Disneyland California, 2017's sentiment score is the highest.
 
+##Sentimental analysis with *nrc* lexicon
+
+```{r}
+DLR_Amer_lo_words <- DLR_Amer%>%
+  inner_join(get_sentiments("nrc")) %>%
+  group_by(sentiment, word) %>%
+  count(mycount = n()) %>%
+  distinct() %>%
+  filter(sentiment %in%
+  c("anger", "fear", "anticipation", "trust", "surprise", "sadness", "joy", "disgust"))
+
+
+head(DLR_Amer_lo_words)
+```
+```{r}
+# Change the width of bars
+ggplot(DLR_Amer_lo_words, aes(x=sentiment, y=n)) +
+  geom_bar(stat="identity", width=0.5)
+```
+
 
 ## Region: Euorpe and Africa
 
@@ -160,10 +180,30 @@ DLR_AfEu %>%
            stat = "identity") + 
   coord_flip() + 
   labs(x = "", 
-       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       title = "Sentiment Analysis of Reviews in the Eurafrica using Bing Lexicon",
        subtitle = "Sorted by Year")
 
 ```
+
+```{r}
+DLR_AfEu_lo_words <- DLR_AfEu%>%
+  inner_join(get_sentiments("nrc")) %>%
+  group_by(sentiment, word) %>%
+  count(mycount = n()) %>%
+  distinct() %>%
+  filter(sentiment %in%
+  c("anger", "fear", "anticipation", "trust", "surprise", "sadness", "joy", "disgust"))
+
+
+head(DLR_AfEu_lo_words)
+```
+
+```{r}
+ggplot(DLR_AfEu_lo_words, aes(x=sentiment, y=n)) +
+  geom_bar(stat="identity", width=0.5)
+```
+
+
 
 
 
@@ -181,7 +221,7 @@ DLR_AsOc %>%
            stat = "identity") + 
   coord_flip() + 
   labs(x = "", 
-       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       title = "Sentiment Analysis of Reviews in the Asia using Bing Lexicon",
        subtitle = "Sorted by Reviewer ID")
 ```
 
@@ -199,7 +239,25 @@ DLR_AsOc %>%
            stat = "identity", fill="#393E8F", color="#F3CC64") + 
   coord_flip() + 
   labs(x = "", 
-       title = "Sentiment Analysis of Reviews in the Americas using Bing Lexicon",
+       title = "Sentiment Analysis of Reviews in the Asia using Bing Lexicon",
        subtitle = "Sorted by Year")
 
+```
+
+
+```{r}
+DLR_AsOc_lo_words <- DLR_AsOc%>%
+  inner_join(get_sentiments("nrc")) %>%
+  group_by(sentiment, word) %>%
+  count(mycount = n()) %>%
+  distinct() %>%
+  filter(sentiment %in%
+  c("anger", "fear", "anticipation", "trust", "surprise", "sadness", "joy", "disgust"))
+
+
+head(DLR_AsOc_lo_words)
+```
+```{r}
+ggplot(DLR_AsOc_lo_words, aes(x=sentiment, y=n)) +
+  geom_bar(stat="identity", width=0.5)
 ```
