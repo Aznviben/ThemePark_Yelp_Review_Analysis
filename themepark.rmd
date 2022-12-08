@@ -159,66 +159,6 @@ DLR_Amer_wordcloud_sentiment <- DLR_Amer %>%
 
 ```
 
-```{r}
-DLR_Amer_Cali <- DLReview %>% 
-  filter(((Reviewer_Continent == "North America")|(Reviewer_Continent=="South America"))&(Branch=="Disneyland_California")) %>% 
-  unnest_tokens(word, Review_Text) %>%
-  anti_join(stop_words)
-
-
-head(DLR_Amer_Cali)
-```
-```{r}
-DLR_Amer_Cali_wordcloud_sentiment <- DLR_Amer_Cali %>%
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word~sentiment, value.var ="n", fill=0) %>%
-  comparison.cloud(colors = c("blue","red"), max.words = 50)
-
-
-```
-
-
-```{r}
-DLR_Amer_HK <- DLReview %>% 
-  filter(((Reviewer_Continent == "North America")|(Reviewer_Continent=="South America"))&(Branch=="Disneyland_HongKong")) %>% 
-  unnest_tokens(word, Review_Text) %>%
-  anti_join(stop_words)
-
-
-head(DLR_Amer_HK)
-```
-
-```{r}
-DLR_Amer_HK_wordcloud_sentiment <- DLR_Amer_HK %>%
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word~sentiment, value.var ="n", fill=0) %>%
-  comparison.cloud(colors = c("blue","red"), max.words = 50)
-
-
-```
-
-```{r}
-DLR_Amer_Paris <- DLReview %>% 
-  filter(((Reviewer_Continent == "North America")|(Reviewer_Continent=="South America"))&(Branch=="Disneyland_Paris")) %>% 
-  unnest_tokens(word, Review_Text) %>%
-  anti_join(stop_words)
-
-
-head(DLR_Amer_Paris)
-```
-
-```{r}
-DLR_Amer_Paris_wordcloud_sentiment <- DLR_Amer_Paris %>%
-  inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  acast(word~sentiment, value.var ="n", fill=0) %>%
-  comparison.cloud(colors = c("blue","red"), max.words = 50)
-
-
-```
-
 
 
 ## Region: Euorpe and Africa
@@ -281,7 +221,7 @@ DLR_AfEu_wordcloud_sentiment <- DLR_AfEu %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word~sentiment, value.var ="n", fill=0) %>%
-  comparison.cloud(colors = c("blue","red"), max.words = 40)
+  comparison.cloud(colors = c("blue","red"), max.words = 50)
 
 
 ```
